@@ -35,8 +35,8 @@ UKF::UKF() {
   // initial covariance matrix
   P_ = MatrixXd::Identity(n_x_, n_x_);
   
-  ///* predicted sigma points matrix
-  Xsig_pred_ = MatrixXd::Zero(n_aug_, 2*n_aug_ + 1);
+  // predicted sigma points matrix
+  Xsig_pred_ = MatrixXd::Zero(n_x_, 2*n_aug_ + 1);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
   std_a_ = 2;
@@ -201,9 +201,8 @@ void UKF::ProcessMeasurement(MeasurementPackage measurement_pack) {
   //Compute the time elapsed between the current and previous measurements
   //Time is measured in seconds and timestamps are in microseconds.
   const float dt = (measurement_pack.timestamp_ - time_us_) / 1000000.0;
+  assert(dt > 0); // if dt <= 0, the input data is corrupted
   time_us_ = measurement_pack.timestamp_;
-  // test:
-  // x_ << 1, 2, 3, .4, .5;
   Prediction(dt);
 
 #ifdef DEBUG
@@ -227,11 +226,12 @@ void UKF::Prediction(double delta_t) {
   vector, x_. Predict sigma points, the state, and the state covariance matrix.
   */
   MatrixXd Xsig_aug = MatrixXd(n_aug_, 2 * n_aug_ + 1);
-  MatrixXd Xsig_pred = MatrixXd(n_x_, 2 * n_aug_ + 1);
 
+  // Generate augmented sigma points, predict new sigma points using the model
+  // and predict mean con covariance of the state.
   AugmentedSigmaPoints(&Xsig_aug);
-  SigmaPointPrediction(delta_t, Xsig_aug, &Xsig_pred);
-  PredictMeanAndCovariance(Xsig_pred);
+  SigmaPointPrediction(delta_t, Xsig_aug, &Xsig_pred_);
+  PredictMeanAndCovariance(Xsig_pred_);
 }
 
 // ----------------------------------------------------------------------------
