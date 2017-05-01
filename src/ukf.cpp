@@ -91,6 +91,41 @@ UKF::~UKF() {}
 
 // ----------------------------------------------------------------------------
 /**
+ * AugmentedSigmaPoints
+ * @param[out] Xsig_out The sigma points as columns in a matrix
+ */
+void UKF::AugmentedSigmaPoints(MatrixXd* Xsig_out) {
+  //create augmented mean vector
+  VectorXd x_aug = VectorXd(n_aug_);
+
+  //create augmented state covariance
+  MatrixXd P_aug = MatrixXd(n_aug_, n_aug_);
+  
+  //create augmented mean state
+  x_aug.head(n_x_) = x_;
+  for(int i = 0; i < n_aug_ - n_x_; ++i)
+    x_aug(n_x_+i) = 0;
+
+  //create augmented covariance matrix
+  P_aug.fill(0.0);
+  P_aug.topLeftCorner(n_x_,n_x_) = P_;
+  P_aug(n_x_,n_x_) = std_a_*std_a_;
+  P_aug(n_x_+1,n_x_+1) = std_yawdd_*std_yawdd_;
+
+  //create square root matrix
+  MatrixXd L = P_aug.llt().matrixL();
+
+  //create augmented sigma points
+  (*Xsig_out).col(0)  = x_aug;
+  for (int i = 0; i< n_aug_; i++)
+  {
+    (*Xsig_out).col(i+1)       = x_aug + sqrt(lambda_+n_aug_) * L.col(i);
+    (*Xsig_out).col(i+1+n_aug_) = x_aug - sqrt(lambda_+n_aug_) * L.col(i);
+  }
+}
+
+// ----------------------------------------------------------------------------
+/**
  * GenerateSigmaPoints
  * @param[out] Xsig_out The sigma points as columns in a matrix
  */

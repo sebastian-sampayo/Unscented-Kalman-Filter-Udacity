@@ -85,6 +85,12 @@ public:
   virtual ~UKF();
 
   /**
+   * AugmentedSigmaPoints
+   * @param[out] Xsig_out The sigma points as columns in a matrix
+   */
+  void AugmentedSigmaPoints(MatrixXd* Xsig_out);
+  
+  /**
    * GenerateSigmaPoints
    * @param[out] Xsig_out The sigma points as columns in a matrix
    */
