@@ -28,10 +28,10 @@ UKF::UKF() {
   n_aug_ = 7;
 
   // initial state vector
-  x_ = VectorXd(n_x_);
+  x_ = VectorXd::Zero(n_x_);
 
   // initial covariance matrix
-  P_ = MatrixXd(n_x_, n_x_);
+  P_ = MatrixXd::Identity(n_x_, n_x_);
   
   ///* predicted sigma points matrix
   Xsig_pred_ = MatrixXd::Zero(n_aug_, 2*n_aug_ + 1);
@@ -157,7 +157,16 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
   Complete this function! Make sure you switch between lidar and radar
   measurements.
   */
+  
+  // test:
+  x_ << 1, 2, 3, .4, .5;
   Prediction(0.1);
+
+#ifdef DEBUG
+  // print the output
+  cout << "x_ = " << endl << x_ << endl;
+  cout << "P_ = " << endl << P_ << endl;
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -178,12 +187,42 @@ void UKF::Prediction(double delta_t) {
 
   AugmentedSigmaPoints(&Xsig_aug);
   SigmaPointPrediction(delta_t, Xsig_aug, &Xsig_pred);
+  PredictMeanAndCovariance(Xsig_pred);
+}
+
+// ----------------------------------------------------------------------------
+/**
+ * PredictMeanAndCovariance Predicts mean and covariance of the state
+ * @param[in] Xsig_in Predicted sigma points of size [n_x_, (2*n_aug_+1)]
+ */
+void UKF::PredictMeanAndCovariance(const MatrixXd &Xsig_in) {
+  //predicted state mean
+  x_.fill(0.0);
+  for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
+    x_ = x_ + weights_(i) * Xsig_in.col(i);
+  }
+
+  //predicted state covariance matrix
+  P_.fill(0.0);
+  for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
+    // state difference
+    VectorXd x_diff = Xsig_in.col(i) - x_;
+    //angle normalization
+    while (x_diff(3) >  M_PI) x_diff(3) -= 2.*M_PI;
+    while (x_diff(3) < -M_PI) x_diff(3) += 2.*M_PI;
+
+    P_ = P_ + weights_(i) * x_diff * x_diff.transpose() ;
+  }
 }
 
 // ----------------------------------------------------------------------------
 /**
  * SigmaPointPrediction Predicts sigma points from augmented sigma points
  * @param delta_t Time between k and k+1 in s
+ * @param[in] Xsig_in Augmented sigma points generated with the  last 
+ *                    a posteriori estimation.
+ * @param[out] Xsig_out Predicted sigma points using the non-linear functions 
+ *                      of the CVTR model.
  */
 void UKF::SigmaPointPrediction(const double delta_t
                              , const MatrixXd &Xsig_in

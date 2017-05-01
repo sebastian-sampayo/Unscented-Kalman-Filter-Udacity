@@ -110,9 +110,18 @@ public:
   void Prediction(double delta_t);
 
   /**
+   * PredictMeanAndCovariance Predicts mean and covariance of the state
+   * @param[in] Xsig_in Predicted sigma points of size [n_x_, (2*n_aug_+1)]
+   */
+  void PredictMeanAndCovariance(const MatrixXd &Xsig_in);
+
+  /**
    * SigmaPointPrediction Predicts sigma points from augmented sigma points
    * @param delta_t Time between k and k+1 in s
-   * @param[in] Xsig_in Augmented sigma points generated with a posteriori
+   * @param[in] Xsig_in Augmented sigma points generated with the  last 
+   *                    a posteriori estimation.
+   * @param[out] Xsig_out Predicted sigma points using the non-linear functions 
+   *                      of the CVTR model.
    */
   void SigmaPointPrediction(const double delta_t
                           , const MatrixXd &Xsig_in
