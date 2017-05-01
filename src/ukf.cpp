@@ -10,6 +10,7 @@ using Eigen::MatrixXd;
 using Eigen::VectorXd;
 using std::vector;
 
+// ----------------------------------------------------------------------------
 /**
  * Initializes Unscented Kalman filter
  */
@@ -89,68 +90,10 @@ UKF::UKF() {
   }
 }
 
+// ----------------------------------------------------------------------------
 UKF::~UKF() {}
 
 // ----------------------------------------------------------------------------
-/**
- * AugmentedSigmaPoints
- * @param[out] Xsig_out The sigma points as columns in a matrix
- */
-void UKF::AugmentedSigmaPoints(MatrixXd* Xsig_out) {
-  //create augmented mean vector
-  VectorXd x_aug = VectorXd(n_aug_);
-
-  //create augmented state covariance
-  MatrixXd P_aug = MatrixXd(n_aug_, n_aug_);
-  
-  //create augmented mean state
-  x_aug.head(n_x_) = x_;
-  x_aug(n_x_) = 0;
-  x_aug(n_x_+1) = 0;
-
-  //create augmented covariance matrix
-  P_aug.fill(0.0);
-  P_aug.topLeftCorner(n_x_,n_x_) = P_;
-  P_aug(n_x_,n_x_) = std_a_*std_a_;
-  P_aug(n_x_+1,n_x_+1) = std_yawdd_*std_yawdd_;
-
-  //create square root matrix
-  MatrixXd L = P_aug.llt().matrixL();
-
-  //create augmented sigma points
-  (*Xsig_out).col(0)  = x_aug;
-  for (int i = 0; i< n_aug_; i++)
-  {
-    (*Xsig_out).col(i+1)        = x_aug + sqrt(lambda_+n_aug_) * L.col(i);
-    (*Xsig_out).col(i+1+n_aug_) = x_aug - sqrt(lambda_+n_aug_) * L.col(i);
-  }
-}
-
-// ----------------------------------------------------------------------------
-/**
- * GenerateSigmaPoints
- * @param[out] Xsig_out The sigma points as columns in a matrix
- */
-void UKF::GenerateSigmaPoints(MatrixXd* Xsig_out) {
-  //calculate square root of P
-  MatrixXd A = P_.llt().matrixL();
-  
-  //set first column of sigma point matrix
-  (*Xsig_out).col(0)  = x_;
-
-  //set remaining sigma points
-  for (int i = 0; i < n_x_; i++)
-  {
-    (*Xsig_out).col(i+1)     = x_ + sqrt(lambda_+n_x_) * A.col(i);
-    (*Xsig_out).col(i+1+n_x_) = x_ - sqrt(lambda_+n_x_) * A.col(i);
-  }
-}
-
-// ----------------------------------------------------------------------------
-/**
- * @param {MeasurementPackage} measurement_pack The latest measurement data of
- * either radar or laser.
- */
 void UKF::ProcessMeasurement(MeasurementPackage measurement_pack) {
   /**
   TODO:
@@ -213,11 +156,6 @@ void UKF::ProcessMeasurement(MeasurementPackage measurement_pack) {
 }
 
 // ----------------------------------------------------------------------------
-/**
- * Predicts sigma points, the state, and the state covariance matrix.
- * @param {double} delta_t the change in time (in seconds) between the last
- * measurement and this one.
- */
 void UKF::Prediction(double delta_t) {
   /**
   TODO:
@@ -230,47 +168,43 @@ void UKF::Prediction(double delta_t) {
   // Generate augmented sigma points, predict new sigma points using the model
   // and predict mean con covariance of the state.
   AugmentedSigmaPoints(&Xsig_aug);
-  SigmaPointPrediction(delta_t, Xsig_aug, &Xsig_pred_);
-  PredictMeanAndCovariance(Xsig_pred_);
+  SigmaPointPrediction(delta_t, Xsig_aug);
+  PredictMeanAndCovariance();
 }
 
 // ----------------------------------------------------------------------------
-/**
- * PredictMeanAndCovariance Predicts mean and covariance of the state
- * @param[in] Xsig_in Predicted sigma points of size [n_x_, (2*n_aug_+1)]
- */
-void UKF::PredictMeanAndCovariance(const MatrixXd &Xsig_in) {
-  //predicted state mean
-  x_.fill(0.0);
-  for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
-    x_ = x_ + weights_(i) * Xsig_in.col(i);
-  }
+void UKF::AugmentedSigmaPoints(MatrixXd* Xsig_out) {
+  //create augmented mean vector
+  VectorXd x_aug = VectorXd(n_aug_);
 
-  //predicted state covariance matrix
-  P_.fill(0.0);
-  for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
-    // state difference
-    VectorXd x_diff = Xsig_in.col(i) - x_;
-    //angle normalization
-    while (x_diff(3) >  M_PI) x_diff(3) -= 2.*M_PI;
-    while (x_diff(3) < -M_PI) x_diff(3) += 2.*M_PI;
+  //create augmented state covariance
+  MatrixXd P_aug = MatrixXd(n_aug_, n_aug_);
+  
+  //create augmented mean state
+  x_aug.head(n_x_) = x_;
+  x_aug(n_x_) = 0;
+  x_aug(n_x_+1) = 0;
 
-    P_ = P_ + weights_(i) * x_diff * x_diff.transpose() ;
+  //create augmented covariance matrix
+  P_aug.fill(0.0);
+  P_aug.topLeftCorner(n_x_,n_x_) = P_;
+  P_aug(n_x_,n_x_) = std_a_*std_a_;
+  P_aug(n_x_+1,n_x_+1) = std_yawdd_*std_yawdd_;
+
+  //create square root matrix
+  MatrixXd L = P_aug.llt().matrixL();
+
+  //create augmented sigma points
+  (*Xsig_out).col(0)  = x_aug;
+  for (int i = 0; i< n_aug_; i++)
+  {
+    (*Xsig_out).col(i+1)        = x_aug + sqrt(lambda_+n_aug_) * L.col(i);
+    (*Xsig_out).col(i+1+n_aug_) = x_aug - sqrt(lambda_+n_aug_) * L.col(i);
   }
 }
 
 // ----------------------------------------------------------------------------
-/**
- * SigmaPointPrediction Predicts sigma points from augmented sigma points
- * @param delta_t Time between k and k+1 in s
- * @param[in] Xsig_in Augmented sigma points generated with the  last 
- *                    a posteriori estimation.
- * @param[out] Xsig_out Predicted sigma points using the non-linear functions 
- *                      of the CVTR model.
- */
-void UKF::SigmaPointPrediction(const double delta_t
-                             , const MatrixXd &Xsig_in
-                             , MatrixXd* Xsig_out) {
+void UKF::SigmaPointPrediction(const double delta_t, const MatrixXd &Xsig_in) {
   //predict sigma points
   for (int i = 0; i< 2*n_aug_+1; i++)
   {
@@ -309,19 +243,36 @@ void UKF::SigmaPointPrediction(const double delta_t
     yawd_p = yawd_p + nu_yawdd*delta_t;
 
     //write predicted sigma point into right column
-    (*Xsig_out)(0,i) = px_p;
-    (*Xsig_out)(1,i) = py_p;
-    (*Xsig_out)(2,i) = v_p;
-    (*Xsig_out)(3,i) = yaw_p;
-    (*Xsig_out)(4,i) = yawd_p;
+    Xsig_pred_(0,i) = px_p;
+    Xsig_pred_(1,i) = py_p;
+    Xsig_pred_(2,i) = v_p;
+    Xsig_pred_(3,i) = yaw_p;
+    Xsig_pred_(4,i) = yawd_p;
   }
 }
 
 // ----------------------------------------------------------------------------
-/**
- * Updates the state and the state covariance matrix using a laser measurement.
- * @param {MeasurementPackage} meas_package
- */
+void UKF::PredictMeanAndCovariance() {
+  //predicted state mean
+  x_.fill(0.0);
+  for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
+    x_ = x_ + weights_(i) * Xsig_pred_.col(i);
+  }
+
+  //predicted state covariance matrix
+  P_.fill(0.0);
+  for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //iterate over sigma points
+    // state difference
+    VectorXd x_diff = Xsig_pred_.col(i) - x_;
+    //angle normalization
+    while (x_diff(3) >  M_PI) x_diff(3) -= 2.*M_PI;
+    while (x_diff(3) < -M_PI) x_diff(3) += 2.*M_PI;
+
+    P_ = P_ + weights_(i) * x_diff * x_diff.transpose() ;
+  }
+}
+
+// ----------------------------------------------------------------------------
 void UKF::UpdateLidar(MeasurementPackage meas_package) {
   /**
   TODO:
@@ -334,10 +285,6 @@ void UKF::UpdateLidar(MeasurementPackage meas_package) {
 }
 
 // ----------------------------------------------------------------------------
-/**
- * Updates the state and the state covariance matrix using a radar measurement.
- * @param {MeasurementPackage} meas_package
- */
 void UKF::UpdateRadar(MeasurementPackage meas_package) {
   /**
   TODO:
@@ -347,4 +294,20 @@ void UKF::UpdateRadar(MeasurementPackage meas_package) {
 
   You'll also need to calculate the radar NIS.
   */
+}
+
+// ----------------------------------------------------------------------------
+void UKF::GenerateSigmaPoints(MatrixXd* Xsig_out) {
+  //calculate square root of P
+  MatrixXd A = P_.llt().matrixL();
+  
+  //set first column of sigma point matrix
+  (*Xsig_out).col(0)  = x_;
+
+  //set remaining sigma points
+  for (int i = 0; i < n_x_; i++)
+  {
+    (*Xsig_out).col(i+1)     = x_ + sqrt(lambda_+n_x_) * A.col(i);
+    (*Xsig_out).col(i+1+n_x_) = x_ - sqrt(lambda_+n_x_) * A.col(i);
+  }
 }
