@@ -50,7 +50,7 @@ public:
   * @param radar_measurement Polar coordinates in the format: {ro, phi, ro_dot}
   * @return Cartesian coordinates in the format: {p_x, p_y, v_x, v_y}
   */
-  Eigen::VectorXd ConvertRadar2State(const Eigen::VectorXd& radar_measurement);
+  Eigen::VectorXd ConvertRadar2Cartesian(const Eigen::VectorXd& radar_measurement);
   
 private:
   //A parameter to tune the initial velocity when we have a radar measurement

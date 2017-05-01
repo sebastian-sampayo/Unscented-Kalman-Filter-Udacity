@@ -1,11 +1,12 @@
 #ifndef UKF_H
 #define UKF_H
 
-#include "measurement_package.h"
-#include "Eigen/Dense"
 #include <vector>
 #include <string>
 #include <fstream>
+
+#include "Eigen/Dense"
+#include "measurement_package.h"
 #include "tools.h"
 
 using Eigen::MatrixXd;
@@ -98,9 +99,9 @@ public:
 
   /**
    * ProcessMeasurement
-   * @param meas_package The latest measurement data of either radar or laser
+   * @param measurement_pack The latest measurement data of either radar or laser
    */
-  void ProcessMeasurement(MeasurementPackage meas_package);
+  void ProcessMeasurement(MeasurementPackage measurement_pack);
 
   /**
    * Prediction Predicts sigma points, the state, and the state covariance

@@ -1,7 +1,9 @@
 #include "ukf.h"
-#include "tools.h"
-#include "Eigen/Dense"
+
 #include <iostream>
+
+#include "Eigen/Dense"
+#include "tools.h"
 
 using namespace std;
 using Eigen::MatrixXd;
@@ -142,25 +144,67 @@ void UKF::GenerateSigmaPoints(MatrixXd* Xsig_out) {
     (*Xsig_out).col(i+1)     = x_ + sqrt(lambda_+n_x_) * A.col(i);
     (*Xsig_out).col(i+1+n_x_) = x_ - sqrt(lambda_+n_x_) * A.col(i);
   }
-  
 }
 
 // ----------------------------------------------------------------------------
 /**
- * @param {MeasurementPackage} meas_package The latest measurement data of
+ * @param {MeasurementPackage} measurement_pack The latest measurement data of
  * either radar or laser.
  */
-void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
+void UKF::ProcessMeasurement(MeasurementPackage measurement_pack) {
   /**
   TODO:
 
   Complete this function! Make sure you switch between lidar and radar
   measurements.
   */
+#ifdef DEBUG
+    cout << "---------- New measurement ---------" << endl;
+#endif
+
+  /*****************************************************************************
+   *  Initialization
+   ****************************************************************************/
+  //Initialize the state x_ with the first measurement.
+  //TODO: Try different P matrix initializations. However, the final result 
+  // (after several iterations) shouldn't be very dependent on this.
+  if (!is_initialized_) {
+    // first measurement
+#ifdef DEBUG
+    cout << "x State init" << endl;
+#endif
+
+    if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
+      Tools tools;
+      VectorXd x_aux = tools.ConvertRadar2Cartesian(measurement_pack.raw_measurements_);
+      x_(0) = x_aux(0); // px
+      x_(1) = x_aux(1); // py
+      x_(2) = sqrt(x_aux(2)*x_aux(2) + x_aux(3)*x_aux(3)); // v = sqrt(vx^2 + vy^2)
+      x_(3) = 0; // yaw
+      x_(4) = 0; // yaw dot
+    }
+    else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
+      x_ << measurement_pack.raw_measurements_[0], 
+            measurement_pack.raw_measurements_[1],
+            0, 0, 0;
+    }
+
+    // done initializing, no need to predict or update
+    is_initialized_ = true;
+    time_us_ = measurement_pack.timestamp_;  
+    return;
+  }
   
+  /*****************************************************************************
+   *  Prediction
+   ****************************************************************************/
+  //Compute the time elapsed between the current and previous measurements
+  //Time is measured in seconds and timestamps are in microseconds.
+  const float dt = (measurement_pack.timestamp_ - time_us_) / 1000000.0;
+  time_us_ = measurement_pack.timestamp_;
   // test:
-  x_ << 1, 2, 3, .4, .5;
-  Prediction(0.1);
+  // x_ << 1, 2, 3, .4, .5;
+  Prediction(dt);
 
 #ifdef DEBUG
   // print the output

@@ -105,7 +105,7 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
 }
 
 // ----------------------------------------------------------------------------
-VectorXd Tools::ConvertRadar2State(const Eigen::VectorXd& polar) {
+VectorXd Tools::ConvertRadar2Cartesian(const Eigen::VectorXd& polar) {
   /**
   * Cartesian velocity is the actual velocity of the object, while polar velocity (ro_dot) is the 
   * measure from the radar.
