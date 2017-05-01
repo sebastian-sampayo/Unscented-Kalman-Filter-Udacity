@@ -110,6 +110,15 @@ public:
   void Prediction(double delta_t);
 
   /**
+   * SigmaPointPrediction Predicts sigma points from augmented sigma points
+   * @param delta_t Time between k and k+1 in s
+   * @param[in] Xsig_in Augmented sigma points generated with a posteriori
+   */
+  void SigmaPointPrediction(const double delta_t
+                          , const MatrixXd &Xsig_in
+                          , MatrixXd* Xsig_out);
+
+  /**
    * Updates the state and the state covariance matrix using a laser measurement
    * @param meas_package The measurement at k+1
    */
