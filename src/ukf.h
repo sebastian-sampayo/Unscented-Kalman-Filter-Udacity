@@ -85,6 +85,12 @@ public:
   virtual ~UKF();
 
   /**
+   * GenerateSigmaPoints
+   * @param[out] Xsig_out The sigma points as columns in a matrix
+   */
+  void GenerateSigmaPoints(MatrixXd* Xsig_out);
+
+  /**
    * ProcessMeasurement
    * @param meas_package The latest measurement data of either radar or laser
    */
