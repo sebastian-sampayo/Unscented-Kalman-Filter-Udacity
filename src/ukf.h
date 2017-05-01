@@ -131,6 +131,13 @@ public:
   void UpdateRadar(MeasurementPackage measurement_pack);
 
   /**
+   * Updates the state and the state covariance matrix using a radar measurement
+   * @param[out] z_out The measurement prediction at k+1
+   * @param[out] S_out The measurement covariance matrix prediction at k+1
+   */
+  void PredictRadarMeasurement(VectorXd& z_out, MatrixXd& S_out);
+
+  /**
    * GenerateSigmaPoints
    * @param[out] Xsig_out The sigma points as columns in a matrix
    */
