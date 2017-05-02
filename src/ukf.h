@@ -134,8 +134,9 @@ public:
    * Updates the state and the state covariance matrix using a radar measurement
    * @param[out] z_out The measurement prediction at k+1
    * @param[out] S_out The measurement covariance matrix prediction at k+1
+   * @param[out] Zsig The measurement sigma points as colums in a matrix
    */
-  void PredictRadarMeasurement(VectorXd& z_out, MatrixXd& S_out);
+  void PredictRadarMeasurement(VectorXd& z_out, MatrixXd& S_out, MatrixXd& Zsig);
 
   /**
    * GenerateSigmaPoints

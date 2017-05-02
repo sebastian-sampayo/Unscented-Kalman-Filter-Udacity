@@ -219,9 +219,11 @@ int main(int argc, char* argv[]) {
 
   }
 
+#ifdef DEBUG
   // compute the accuracy (RMSE)
   Tools tools;
   cout << "RMSE" << endl << tools.CalculateRMSE(estimations, ground_truth) << endl;
+#endif
 
   // close files
   if (out_file_.is_open()) {
@@ -232,6 +234,8 @@ int main(int argc, char* argv[]) {
     in_file_.close();
   }
 
+#ifdef DEBUG
   cout << "Done!" << endl;
+#endif
   return 0;
 }
