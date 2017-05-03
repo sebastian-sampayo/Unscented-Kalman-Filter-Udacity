@@ -43,6 +43,7 @@ In order to tune the process noise parameters I plotted the Normalized Innovatio
 
 ![NIS][nis]
 
+This value should be between 0.35 and 7.81 in at least 80% of all radar update steps for the filter to be consistent (according to the chi-squared distribution table for 3 degrees of freedom ).
 
 ## Source files hierarchy and description
 - main.cpp : Main program. Reads in measurements and apply Sensor Fusion algorithm.
