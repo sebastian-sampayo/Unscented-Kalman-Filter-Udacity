@@ -131,6 +131,9 @@ int main(int argc, char* argv[]) {
 
   // Create a UKF instance
   UKF ukf;
+  
+  // Create a Tools instance
+  Tools tools;
 
   // used to compute the RMSE later
   vector<VectorXd> estimations;
@@ -155,7 +158,17 @@ int main(int argc, char* argv[]) {
   out_file_ << "px_ground_truth" << "\t";
   out_file_ << "py_ground_truth" << "\t";
   out_file_ << "vx_ground_truth" << "\t";
-  out_file_ << "vy_ground_truth" << "\n";
+  out_file_ << "vy_ground_truth" << "\t";
+  // Added standard deviation for each estimator and accumulated RMSE
+  out_file_ << "std_px_est" << "\t";
+  out_file_ << "std_py_est" << "\t";
+  out_file_ << "std_v_est" << "\t";
+  out_file_ << "std_yaw_est" << "\t";
+  out_file_ << "std_yaw_rate_est" << "\t";
+  out_file_ << "RMSE_acc_px" << "\t";
+  out_file_ << "RMSE_acc_py" << "\t";
+  out_file_ << "RMSE_acc_vx" << "\t";
+  out_file_ << "RMSE_acc_vy" << "\n";
 
 
   for (size_t k = 0; k < number_of_measurements; ++k) {
@@ -202,7 +215,7 @@ int main(int argc, char* argv[]) {
     out_file_ << gt_pack_list[k].gt_values_(0) << "\t";
     out_file_ << gt_pack_list[k].gt_values_(1) << "\t";
     out_file_ << gt_pack_list[k].gt_values_(2) << "\t";
-    out_file_ << gt_pack_list[k].gt_values_(3) << "\n";
+    out_file_ << gt_pack_list[k].gt_values_(3) << "\t";
 
     // convert ukf x vector to cartesian to compare to ground truth
     VectorXd ukf_x_cartesian_ = VectorXd(4);
@@ -217,13 +230,21 @@ int main(int argc, char* argv[]) {
     estimations.push_back(ukf_x_cartesian_);
     ground_truth.push_back(gt_pack_list[k].gt_values_);
 
+    // Added standard deviation for each estimator and accumulated RMSE
+    out_file_ << sqrt(ukf.P_(0,0)) << "\t"; // std_px_est
+    out_file_ << sqrt(ukf.P_(1,1)) << "\t"; // std_py_est
+    out_file_ << sqrt(ukf.P_(2,2)) << "\t"; // std_v_est
+    out_file_ << sqrt(ukf.P_(3,3)) << "\t"; // std_yaw_est
+    out_file_ << sqrt(ukf.P_(4,4)) << "\t"; // std_yaw_rate_est
+    VectorXd rmse = tools.CalculateRMSE(estimations, ground_truth);
+    out_file_ << rmse(0) << "\t"; // RMSE_acc_px
+    out_file_ << rmse(1) << "\t"; // RMSE_acc_py
+    out_file_ << rmse(2) << "\t"; // RMSE_acc_vx
+    out_file_ << rmse(3) << "\n"; // RMSE_acc_vy
   }
 
-#ifdef DEBUG
   // compute the accuracy (RMSE)
-  Tools tools;
   cout << "RMSE" << endl << tools.CalculateRMSE(estimations, ground_truth) << endl;
-#endif
 
   // close files
   if (out_file_.is_open()) {
@@ -234,8 +255,6 @@ int main(int argc, char* argv[]) {
     in_file_.close();
   }
 
-#ifdef DEBUG
   cout << "Done!" << endl;
-#endif
   return 0;
 }

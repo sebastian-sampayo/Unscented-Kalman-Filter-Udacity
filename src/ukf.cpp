@@ -40,10 +40,10 @@ UKF::UKF() {
   Xsig_pred_ = MatrixXd::Zero(n_x_, 2*n_aug_ + 1);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 1;
+  std_a_ = 0.5; // Analysing the data 2.5 m/s seems to be the max acceleration. However, lower values than 1.25 work better regarding the NIS values.
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 1;
+  std_yawdd_ = 0.25; // This value is more difficult to get but 0.25 seems to work, as the yaw rate doesn't seem to be larger than 0.5.
 
   // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
