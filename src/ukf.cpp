@@ -80,6 +80,12 @@ UKF::UKF() {
   for (int i=1; i<2*n_aug_+1; i++) {  //2n+1 weights
     weights_(i) = weight_i;
   }
+  
+  // The radar measurement covariance matrix
+  R_radar_ = MatrixXd(3, 3);
+  R_radar_ << std_radr_*std_radr_, 0, 0,
+              0, std_radphi_*std_radphi_, 0,
+              0, 0,std_radrd_*std_radrd_;
 }
 
 // ----------------------------------------------------------------------------
@@ -135,9 +141,17 @@ void UKF::ProcessMeasurement(MeasurementPackage measurement_pack) {
    ****************************************************************************/
   //Compute the time elapsed between the current and previous measurements
   //Time is measured in seconds and timestamps are in microseconds.
-  const float dt = (measurement_pack.timestamp_ - time_us_) / 1000000.0;
+  float dt = (measurement_pack.timestamp_ - time_us_) / 1000000.0;
   assert(dt > 0); // if dt <= 0, the input data is corrupted
   time_us_ = measurement_pack.timestamp_;
+  
+  // This is to avoid numerical instability:
+  while (dt > 0.2)
+  {
+      double step = 0.1;
+      Prediction(step);
+      dt -= step;
+  }
   Prediction(dt);
   
   /*****************************************************************************
@@ -313,7 +327,7 @@ void UKF::UpdateRadar(MeasurementPackage measurement_pack) {
   // sigma points in the measurement space
   VectorXd z_pred = VectorXd::Zero(n_z);
   MatrixXd S =  MatrixXd::Zero(n_z, n_z);
-  MatrixXd Zsig = MatrixXd(n_z, 2 * n_aug_ + 1);
+  MatrixXd Zsig = MatrixXd::Zero(n_z, 2 * n_aug_ + 1);
 
   PredictRadarMeasurement(z_pred, S, Zsig);
   
@@ -365,7 +379,7 @@ void UKF::PredictRadarMeasurement(VectorXd &z_pred, MatrixXd &S, MatrixXd &Zsig)
   //number of measurement components
   const int n_z = z_pred.size();
   
-    //transform sigma points into measurement space
+  //transform sigma points into measurement space
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //2n+1 simga points
 
     // extract values for better readibility
@@ -378,21 +392,30 @@ void UKF::PredictRadarMeasurement(VectorXd &z_pred, MatrixXd &S, MatrixXd &Zsig)
     double v2 = sin(yaw)*v;
 
     // measurement model
-    Zsig(0,i) = sqrt(p_x*p_x + p_y*p_y);                        //r
-    Zsig(1,i) = atan2(p_y,p_x);                                 //phi
-    Zsig(2,i) = (p_x*v1 + p_y*v2 ) / sqrt(p_x*p_x + p_y*p_y);   //r_dot
+    Zsig(0,i) = sqrt(p_x*p_x + p_y*p_y);                            //r
+    // avoid domain errors
+    if (abs(p_x) > 0.001 ) {
+      Zsig(1,i) = atan2(p_y, p_x);                                 //phi
+    } else {
+      Zsig(1,i) = 0;
+    }
+    // avoid division by 0
+    if (Zsig(0,i) > 0.001) {
+      Zsig(2,i) = (p_x*v1 + p_y*v2 ) / sqrt(p_x*p_x + p_y*p_y);   //r_dot
+    } else {
+      Zsig(2,i) = 0;
+    }
   }
 
   //mean predicted measurement
-  // VectorXd z_pred = VectorXd(n_z);
   z_pred.fill(0.0);
   for (int i=0; i < 2*n_aug_+1; i++) {
       z_pred = z_pred + weights_(i) * Zsig.col(i);
   }
 
   //measurement covariance matrix S
-  // MatrixXd S = MatrixXd(n_z,n_z);
-  S.fill(0.0);
+  //add measurement noise covariance matrix
+  S = R_radar_;
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //2n+1 simga points
     //residual
     VectorXd z_diff = Zsig.col(i) - z_pred;
@@ -403,13 +426,6 @@ void UKF::PredictRadarMeasurement(VectorXd &z_pred, MatrixXd &S, MatrixXd &Zsig)
 
     S = S + weights_(i) * z_diff * z_diff.transpose();
   }
-
-  //add measurement noise covariance matrix
-  MatrixXd R = MatrixXd(n_z,n_z);
-  R <<    std_radr_*std_radr_, 0, 0,
-          0, std_radphi_*std_radphi_, 0,
-          0, 0,std_radrd_*std_radrd_;
-  S = S + R;
 }
 
 // ----------------------------------------------------------------------------
