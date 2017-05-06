@@ -29,10 +29,10 @@ The program was also tested with a set of input measurements from the files in t
 - For the input `obj_pose-laser-radar-synthetic-input.txt` the RMSE values obtained were:
   ```
   Accuracy - RMSE:
-  px: 0.0726829
-  py: 0.0841594
-  vx: 0.346685
-  vz: 0.236226
+  px: 0.0719746
+  py: 0.0838795
+  vx: 0.348246
+  vz: 0.231606
   ```
   
 Here it's a plot of the x and y position measured, estimated and ground truth values

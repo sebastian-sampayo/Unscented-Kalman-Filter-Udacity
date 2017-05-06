@@ -40,10 +40,10 @@ UKF::UKF() {
   Xsig_pred_ = MatrixXd::Zero(n_x_, 2*n_aug_ + 1);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 1; // Analysing the data 2.5 m/s seems to be the max acceleration. However, lower values than 1.25 work better regarding the NIS values.
+  std_a_ = 2.5; // Analysing the data 2.5 m/s seems to be the max acceleration. However, lower values than 1.25 work better regarding the NIS values. This depends also on the data set
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 0.25; // This value is more difficult to get but 0.25 seems to work, as the yaw rate doesn't seem to be larger than 0.5.
+  std_yawdd_ = 0.7; // This value is more difficult to get but 0.25-0.7 seems to work, as the yaw rate doesn't seem to be larger than 1.
 
   // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
@@ -118,6 +118,13 @@ void UKF::ProcessMeasurement(MeasurementPackage measurement_pack) {
     if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) {
       Tools tools;
       VectorXd x_aux = tools.ConvertRadar2Cartesian(measurement_pack.raw_measurements_);
+      // avoid numerical instability
+      if ( fabs(x_aux(0)) < 0.001) {
+         x_aux(0) = 0.001;
+      }
+      if (fabs(x_aux(1)) < 0.001 ) {
+         x_aux(1) = 0.001;
+      }
       x_(0) = x_aux(0); // px
       x_(1) = x_aux(1); // py
       x_(2) = sqrt(x_aux(2)*x_aux(2) + x_aux(3)*x_aux(3)); // v = sqrt(vx^2 + vy^2)
@@ -127,7 +134,7 @@ void UKF::ProcessMeasurement(MeasurementPackage measurement_pack) {
     else if (measurement_pack.sensor_type_ == MeasurementPackage::LASER) {
       x_ << measurement_pack.raw_measurements_[0], 
             measurement_pack.raw_measurements_[1],
-            0, 0, 0;
+            0.001, 0, 0;
     }
 
     // done initializing, no need to predict or update
